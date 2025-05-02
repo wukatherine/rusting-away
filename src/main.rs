@@ -1,11 +1,12 @@
-use std::fs::File;        // object providing access to an open file on filesystem
+use std::fs::File; // object providing access to an open file on filesystem
 use std::io::BufRead; // bufread for files
-mod graphs; // import graphs module
-use crate::graphs::graphs::Graph; // use struct Graph as declared in graphs
-use crate::graphs::graphs::Vertex; // use the types declared in graphs
-use crate::graphs::graphs::ListOfEdges;
-use std::collections::HashMap;
-use std::collections::VecDeque;
+mod graphs; use graphs::graphs::Graph;
+use graphs::graphs::ListOfEdges;
+mod similarities; use similarities::similarities::greatest_jaccard;
+use similarities::similarities::jaccard_similarity;
+use similarities::similarities::least_jaccard;
+use similarities::similarities::no_similarity;
+use similarities::similarities::full_similarity;
 
 fn create_edges(path: &str) -> ListOfEdges { // creating edge list from file, similar to function created from hw7
     let mut result: Vec<(usize, usize)> = Vec::new(); // making the vector of edge tuples that will be returned
@@ -36,35 +37,13 @@ fn create_edges(path: &str) -> ListOfEdges { // creating edge list from file, si
     return result;
 }
 
-fn bfs(graph: &Graph, start: usize) -> (usize, u32) { // given graph w/ adjacency lists, returns node and max
-    let mut distance: Vec<Option<u32>> = vec![None; graph.n]; // starts adj list at none
-    distance[start] = Some(0); // adds start node 0
-
-    let mut queue: VecDeque<usize> = VecDeque::new(); 
-    queue.push_back(start); // queue contains start node 0
-
-    let mut farthest_node = start; 
-    let mut max_distance = 0; // max distance will be adjusted as it increases
-
-    while let Some(v) = queue.pop_front() { // while there are nodes to deque/pop - new unprocessed vertex
-        for u in graph.outedges[v].iter() {
-            if let None = distance[*u] { // consider all unprocessed neighbors of v
-                distance[*u] = Some(distance[v].unwrap() + 1);
-                queue.push_back(*u);
-                if distance[*u].unwrap() > max_distance { // if the distance of u is greater than the max distance
-                    max_distance = distance[*u].unwrap(); 
-                    farthest_node = *u; // set equal to u index
-                }
-            }
-        }
-    }
-
-    return (farthest_node, max_distance); // return farthest node and max distance
-}
-
 fn main() {
     let edges: Vec<(usize, usize)> = create_edges("amazon0601.txt"); // creating edges from txt file
     let graph = Graph::create_directed(403394,&edges); // creating graph out of edges with 403394 nodes
-    graph.print_adjlists();
-    println!("{:?}", bfs(&graph, 0));
+    println!("greatest jaccard similarity: {:?}", greatest_jaccard(&graph));
+    println!("similarity: {:?}", jaccard_similarity(&graph, 34158, 25793));
+    println!("smallest jaccard similarity: {:?}", least_jaccard(&graph));
+    println!("similarity: {:?}", jaccard_similarity(&graph, 1, 4));
+    println!("number of nodes that have a clustering coefficient of 1.0 - all their friends are friends: {:?}", full_similarity(&graph).len());
+    println!("number of nodes that have a clustering coefficient of 0.0 - none of their friends are friends: {:?}", no_similarity(&graph).len());
 }
